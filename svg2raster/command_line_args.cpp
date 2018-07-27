@@ -3,22 +3,6 @@
 
 #include <iostream>
 
-namespace
-{
-	std::wistream& operator>>(std::wistream& in, command_line::cmd_args_t::raster_t& rtype)
-	{
-		std::wstring token;
-		in >> token;
-		if (token == L"png")
-			rtype = command_line::cmd_args_t::raster_t::png;
-		else if (token == L"jpeg")
-			rtype = command_line::cmd_args_t::raster_t::jpeg;
-		else
-			in.setstate(std::ios_base::failbit);
-		return in;
-	}
-}
-
 namespace command_line
 {
 	namespace po = boost::program_options;
@@ -33,7 +17,7 @@ namespace command_line
 			config.add_options()
 				("help,h", po::bool_switch()->default_value(false), "produce help message")
 				("url,u", po::wvalue<std::wstring>(&ret._url)->required(), "[string] - <url> to be processed")
-				("format,t", po::wvalue<cmd_args_t::raster_t>(&ret._rtype)->required(), "[string: png|jpeg] - output file format")
+				("format,f", po::wvalue<std::wstring>(&ret._rtype)->required(), "[string: png|jpeg] - output file format")
 				("svg_path,p", po::wvalue<std::wstring>(&ret._svg_path)->required(), "[string] - path to svg files")
 				;
 
