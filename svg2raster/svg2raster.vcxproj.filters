@@ -24,6 +24,12 @@
     <ClInclude Include="command_line_args.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="image_converter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ipc_cache.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
