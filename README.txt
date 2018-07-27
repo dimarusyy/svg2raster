@@ -1,7 +1,7 @@
 Building :
 
 1. Extract 3rdParty.zip to $(SolutionDir)
-2. Load to VS aand build
+2. Load to VS and build
 
 Running :
 

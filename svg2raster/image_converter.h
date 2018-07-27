@@ -52,7 +52,7 @@ struct image_converter
 
 	void apply(const std::string& img_path, const std::string& img_out_path)
 	{
-		Magick::Image image;
+		Magick::Image image{};
 
 		// Determine if Warning exceptions are thrown.
 		// Use is optional.  Set to true to block Warning exceptions.
