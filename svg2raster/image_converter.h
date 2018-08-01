@@ -38,17 +38,14 @@ BOOST_FUSION_ADAPT_STRUCT(converter::settings, (std::string, _converter)(std::st
 
 //////////////////////////////////////////////////////////////////////////
 
-struct image_converter 
+struct image_converter
 {
 	image_converter(const std::string& query_str)
-		: _converting_mutex(boost::interprocess::open_or_create,
-							"svg2raster.convert",
-							details::default_ipc_permissions())
 	{
 		namespace x3 = boost::spirit::x3;
 
 		auto f = query_str.begin(), l = query_str.end();
-		const auto ok = x3::parse(f, l, converter::r_parser , _cfg);
+		const auto ok = x3::parse(f, l, converter::r_parser, _cfg);
 		if (!ok)
 		{
 			std::stringstream ss;
@@ -71,7 +68,11 @@ struct image_converter
 			}
 		}
 
-		boost::interprocess::scoped_lock<boost::interprocess::named_recursive_mutex> lock(_converting_mutex);
+		const auto apply_mutex_name = (fs::path(img_path).filename().string() + ".lock");
+		boost::interprocess::named_recursive_mutex apply_mutex(boost::interprocess::open_or_create,
+															   apply_mutex_name.c_str(),
+															   details::default_ipc_permissions());
+		boost::interprocess::scoped_lock<boost::interprocess::named_recursive_mutex> lock(apply_mutex);
 		std::cout << ">> invoked image conversion\n";
 
 		Magick::Image image{};
@@ -94,9 +95,7 @@ struct image_converter
 
 private:
 	converter::settings _cfg{};
-	ipc_cache_t<1000> _cache{"svg2raster"};
-
-	boost::interprocess::named_recursive_mutex _converting_mutex;
+	ipc_cache_t<1000> _cache{ "svg2raster" };
 };
 
 //////////////////////////////////////////////////////////////////////////

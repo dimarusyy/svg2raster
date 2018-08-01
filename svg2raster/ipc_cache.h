@@ -63,7 +63,7 @@ namespace details
 
 	static std::string default_shared_mutex_name()
 	{
-		return std::string("svg2raster.mutex");
+		return std::string("svg2raster.ipc_cache.lock");
 	}
 
 	static std::string default_shared_memory_name()
