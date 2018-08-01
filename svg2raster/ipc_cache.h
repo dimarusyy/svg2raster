@@ -43,9 +43,6 @@ using ipc_shared_list_t = boost::interprocess::list<T, ipc_shared_allocator_t<T>
 
 //////////////////////////////////////////////////////////////////////////
 
-//typename TList = std::list<K>,
-//typename TMap = std::unordered_map<K, std::pair<V, typename TList::iterator>>,
-
 namespace details
 {
 	static boost::interprocess::permissions default_ipc_permissions()

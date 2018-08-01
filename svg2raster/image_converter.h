@@ -58,6 +58,12 @@ struct image_converter
 	{
 		namespace fs = boost::filesystem;
 
+		const auto apply_mutex_name = (fs::path(img_path).filename().string() + ".lock");
+		boost::interprocess::named_recursive_mutex apply_mutex(boost::interprocess::open_or_create,
+															   apply_mutex_name.c_str(),
+															   details::default_ipc_permissions());
+		boost::interprocess::scoped_lock<boost::interprocess::named_recursive_mutex> lock(apply_mutex);
+
 		const auto cached_info = _cache.get(img_path);
 		if (cached_info != boost::none)
 		{
@@ -68,11 +74,6 @@ struct image_converter
 			}
 		}
 
-		const auto apply_mutex_name = (fs::path(img_path).filename().string() + ".lock");
-		boost::interprocess::named_recursive_mutex apply_mutex(boost::interprocess::open_or_create,
-															   apply_mutex_name.c_str(),
-															   details::default_ipc_permissions());
-		boost::interprocess::scoped_lock<boost::interprocess::named_recursive_mutex> lock(apply_mutex);
 		std::cout << ">> invoked image conversion\n";
 
 		Magick::Image image{};
