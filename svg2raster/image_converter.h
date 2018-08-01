@@ -4,8 +4,12 @@
 #define BOOST_SPIRIT_X3_DEBUG
 #endif
 
+#include "ipc_cache.h"
+
 #include <boost/spirit/home/x3.hpp>
 #include <boost/fusion/include/adapt_struct.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/interprocess/sync/named_recursive_mutex.hpp>
 
 #include <Magick++/Image.h>
 
@@ -37,6 +41,9 @@ BOOST_FUSION_ADAPT_STRUCT(converter::settings, (std::string, _converter)(std::st
 struct image_converter 
 {
 	image_converter(const std::string& query_str)
+		: _converting_mutex(boost::interprocess::open_or_create,
+							"svg2raster.convert",
+							details::default_ipc_permissions())
 	{
 		namespace x3 = boost::spirit::x3;
 
@@ -52,6 +59,21 @@ struct image_converter
 
 	void apply(const std::string& img_path, const std::string& img_out_path)
 	{
+		namespace fs = boost::filesystem;
+
+		const auto cached_info = _cache.get(img_path);
+		if (cached_info != boost::none)
+		{
+			if (fs::exists(cached_info.get()) && cached_info.get() == img_out_path)
+			{
+				std::cout << ">> no conversion, using cached value\n";
+				return;
+			}
+		}
+
+		boost::interprocess::scoped_lock<boost::interprocess::named_recursive_mutex> lock(_converting_mutex);
+		std::cout << ">> invoked image conversion\n";
+
 		Magick::Image image{};
 
 		// Determine if Warning exceptions are thrown.
@@ -62,10 +84,19 @@ struct image_converter
 
 		//output
 		image.write(img_out_path);
+
+		std::cout << ">> cached [" << img_path << ", " << img_out_path << "]\n";
+		_cache.put(img_path, img_out_path);
+
+		std::cout << ">> done\n";
+
 	}
 
 private:
-	converter::settings _cfg;
+	converter::settings _cfg{};
+	ipc_cache_t<1000> _cache{"svg2raster"};
+
+	boost::interprocess::named_recursive_mutex _converting_mutex;
 };
 
 //////////////////////////////////////////////////////////////////////////

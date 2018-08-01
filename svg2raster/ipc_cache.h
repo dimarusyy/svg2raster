@@ -1,116 +1,228 @@
 #pragma once
 
+#include <boost/optional.hpp>
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/interprocess/containers/string.hpp>
+#include <boost/interprocess/containers/pair.hpp>
 #include <boost/interprocess/containers/map.hpp>
 #include <boost/interprocess/containers/list.hpp>
 #include <boost/interprocess/containers/flat_map.hpp>
 #include <boost/interprocess/allocators/allocator.hpp>
 #include <boost/interprocess/sync/named_recursive_mutex.hpp>
 
-#include <unordered_map>
+#include <memory>
+
+//////////////////////////////////////////////////////////////////////////
 
 template <typename T>
 using ipc_shared_allocator_t = boost::interprocess::allocator<T, boost::interprocess::managed_shared_memory::segment_manager>;
 
-template <typename K, typename V>
-using ipc_shared_map_t = boost::interprocess::map<K, V, std::less<K>, ipc_shared_allocator_t<std::pair<K const, V>>>;
-
-template <typename T>
-using ipc_shared_list_t = boost::interprocess::list<T>;
-
 //////////////////////////////////////////////////////////////////////////
-
+// std::string
 using ipc_string_t = boost::interprocess::basic_string<char, std::char_traits<char>, ipc_shared_allocator_t<char>>;
-
 using ipc_string_allocator_t = ipc_shared_allocator_t<ipc_string_t>;
 
 //////////////////////////////////////////////////////////////////////////
+// std::pair<std::string, std::string>
 
-template <int N, typename TList, typename TMap>
-struct lru_strategy_t
+template <typename K, typename V>
+using ipc_shared_pair_t = boost::interprocess::pair<K, V>;
+
+template <typename K, typename V>
+using ipc_shared_pair_allocator_t = ipc_shared_allocator_t<std::pair<K, V>> ;
+
+//////////////////////////////////////////////////////////////////////////
+
+template <typename K, typename V>
+using ipc_shared_map_t = boost::interprocess::map<K, V, std::less<K>, ipc_shared_pair_allocator_t<K const, V>>;
+
+//////////////////////////////////////////////////////////////////////////s
+
+template <typename T>
+using ipc_shared_list_t = boost::interprocess::list<T, ipc_shared_allocator_t<T>>;
+
+//////////////////////////////////////////////////////////////////////////
+
+//typename TList = std::list<K>,
+//typename TMap = std::unordered_map<K, std::pair<V, typename TList::iterator>>,
+
+namespace details
 {
-	lru_strategy_t(TList& list, TMap& map) 
-		: _list(list), _map(map)
+	static boost::interprocess::permissions default_ipc_permissions()
 	{
+		//shared memory permissions
+		boost::interprocess::permissions ipc_shm_permissions;
+#ifdef _WIN32
+		ipc_shm_permissions.set_unrestricted();
+#else
+		//set 0600 on Linux
+		ipc_shm_permissions.set_permissions(0600);
+#endif
+		return ipc_shm_permissions;
 	}
 
-	bool exists(typename TList::iterator hit_it) const
+	static std::string default_shared_mutex_name()
 	{
-		if (hit_it != _list.end())
+		return std::string("svg2raster.mutex");
+	}
+
+	static std::string default_shared_memory_name()
+	{
+		return std::string("svg2raster.memory");
+	}
+
+	static boost::interprocess::managed_shared_memory::size_type default_shared_memory_size()
+	{
+		return 256 * 1024;  // 256KB	
+	}
+}
+
+//////////////////////////////////////////////////////////////////////////
+
+namespace details
+{
+	template <size_t N, typename TList, typename TMap>
+	struct lru_strategy_t
+	{
+		lru_strategy_t(TList& list, TMap& map)
+			: _list(list), _map(map)
 		{
-			// in cache
-			_list.splice(_list.begin(), _list, hit_it);
-			return true;
 		}
-		else
+
+		bool exists(typename TList::iterator hit_it, bool overwrite) const
 		{
-			if (_list.size() == N) 		// full ?
+			if (hit_it != _list.end())
 			{
-				// delete the last
-				const auto last_it = _list.back();
-				_list.pop_back();
-				_map.erase(last_it);
+				// overwrite in cache
+				if (overwrite)
+				{
+					_list.erase(hit_it);
+					_map.erase(_map.find(*hit_it));
+					return false;
+				}
+
+				// in cache
+				_list.splice(_list.begin(), _list, hit_it);
+				return true;
 			}
-			return false;
+			else
+			{
+				if (_list.size() == N) 		// full ?
+				{
+					// delete the last
+					const auto last_it = _list.back();
+					_list.pop_back();
+					_map.erase(last_it);
+				}
+			
+				return false;
+			}
 		}
-	}
 
-	template <typename K, typename V>
-	void insert(const K& key, const V& value) const
-	{
-		// insert to front
-		_list.push_front(key);
-		_map[key] = std::make_pair(value, _list.begin());
-	}
-
-private:
-	TList& _list;
-	TMap& _map;
-};
-
-template <typename K, typename V, size_t N = 10,
-	typename TList = std::list<K>, 
-	typename TMap = std::unordered_map<K, std::pair<V, typename TList::iterator>>,
-	typename TStrategy = lru_strategy_t<N, TList, TMap>>
-struct cache_t
-{
-	cache_t()
-		: _strategy(_items_list, _items_map)
-	{
-	}
-
-	bool get(const K& key, V& value)
-	{
-		const auto f_it = _items_map.find(key);
-		if (f_it == _items_map.end())
+		template <typename K, typename V>
+		void insert(const K& key, const V& value) const
 		{
-			return false;
+			// insert to front
+			_list.push_front(key);
+			_map.emplace(key, std::make_pair(value, _list.begin()));
 		}
 
-		value = f_it->second.first;
-		return true;
+	private:
+		TList& _list;
+		TMap& _map;
+	};
+}
+
+//////////////////////////////////////////////////////////////////////////
+
+template <size_t N>
+struct ipc_cache_t 
+{
+	using shared_list_t = ipc_shared_list_t<ipc_string_t>;
+	using shared_map_t = ipc_shared_map_t<ipc_string_t, ipc_shared_pair_t<ipc_string_t, shared_list_t::iterator>>;
+
+	ipc_cache_t(const std::string& shm_name, boost::interprocess::managed_shared_memory::size_type shm_size = details::default_shared_memory_size())
+		: _shared_mutex(boost::interprocess::open_or_create, 
+						details::default_shared_mutex_name().c_str(),
+						details::default_ipc_permissions()),
+		  _shm(boost::interprocess::managed_shared_memory(boost::interprocess::open_or_create,
+														  details::default_shared_memory_name().c_str(),
+														  shm_size,
+														  0,
+														  details::default_ipc_permissions())),
+		  _p_items_list{nullptr},
+		  _p_items_map{nullptr}
+	{
+		boost::interprocess::scoped_lock<boost::interprocess::named_recursive_mutex> lock(_shared_mutex);
+		if (!lock.owns())
+		{
+			throw std::runtime_error("can't lock shared named mutex");
+		}
+	
+		// construct list
+		_p_items_list = _shm.find_or_construct<shared_list_t>((shm_name + ".list").c_str())(_shm.get_allocator<typename shared_list_t::value_type>());
+		// construct map
+		_p_items_map = _shm.find_or_construct<shared_map_t >((shm_name + ".map").c_str())(_shm.get_allocator<typename shared_map_t::value_type>());
+		
+		_p_strategy = std::make_unique<details::lru_strategy_t<N, shared_list_t, shared_map_t>>(*_p_items_list, *_p_items_map);
 	}
 
-	void put(const K& key, const V& value)
+	boost::optional<std::string> get(const std::string& key)
 	{
-		// try to get item from cache
-		auto list_it = _items_list.end();	
-		const auto f_it = _items_map.find(key);
-		if (f_it != _items_map.end())
+		boost::interprocess::scoped_lock<boost::interprocess::named_recursive_mutex> lock(_shared_mutex);
+		if (!lock.owns())
+		{
+			throw std::runtime_error("can't lock shared named mutex");
+		}
+
+		auto* segment = _shm.get_segment_manager();
+		ipc_string_t shm_key(key.c_str(), segment);
+
+		const auto f_it = _p_items_map->find(shm_key);
+		if (f_it != _p_items_map->end())
+		{
+			const auto rr = f_it->second.first;
+			return boost::make_optional(std::string(f_it->second.first.begin(), f_it->second.first.end()));
+		}
+		return boost::none;
+	}
+
+	virtual void put(const std::string& key, const std::string &value)
+	{
+		boost::interprocess::scoped_lock<boost::interprocess::named_recursive_mutex> lock(_shared_mutex);
+		if (!lock.owns())
+		{
+			throw std::runtime_error("can't lock shared named mutex");
+		}
+
+		ipc_string_allocator_t segment(_shm.get_segment_manager());
+		ipc_string_t shm_key(key.c_str(), segment);
+
+		bool overwrite = false;
+
+ 		// try to get item from cache
+ 		auto list_it = _p_items_list->end();
+ 		const auto f_it = _p_items_map->find(shm_key);
+		if (f_it != _p_items_map->end())
 		{
 			list_it = f_it->second.second;
+			overwrite = (value != std::string(list_it->begin(), list_it->end()));
 		}
 
 		// apply strategy
-		if (!_strategy.exists(list_it))
-		{
-			_strategy.insert<K, V>(key, value);
-		}
+		if (!_p_strategy->exists(list_it, overwrite))
+ 		{
+ 			ipc_string_t shm_value(value.c_str(), segment);
+ 			_p_strategy->insert<ipc_string_t, ipc_string_t>(shm_key, shm_value);
+ 		}
 	}
 
 private:
-	TList _items_list;
-	TMap _items_map;
-	TStrategy _strategy;
+	mutable boost::interprocess::named_recursive_mutex _shared_mutex;
+	boost::interprocess::managed_shared_memory _shm;
+
+	shared_list_t* _p_items_list;
+	shared_map_t* _p_items_map;
+
+	std::unique_ptr<details::lru_strategy_t<N, shared_list_t, shared_map_t>> _p_strategy;
 };
