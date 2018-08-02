@@ -86,21 +86,13 @@ namespace details
 		{
 		}
 
-		bool exists(typename TList::iterator hit_it, bool overwrite) const
+		typename TList::iterator exists(typename TList::iterator hit_it) const
 		{
 			if (hit_it != _list.end())
 			{
-				// overwrite in cache
-				if (overwrite)
-				{
-					_list.erase(hit_it);
-					_map.erase(_map.find(*hit_it));
-					return false;
-				}
-
-				// in cache
+				// in cache, move top
 				_list.splice(_list.begin(), _list, hit_it);
-				return true;
+				return hit_it;
 			}
 			else
 			{
@@ -110,9 +102,8 @@ namespace details
 					const auto last_it = _list.back();
 					_list.pop_back();
 					_map.erase(last_it);
-				}
-			
-				return false;
+				}			
+				return _list.end();
 			}
 		}
 
@@ -122,6 +113,12 @@ namespace details
 			// insert to front
 			_list.push_front(key);
 			_map.emplace(key, std::make_pair(value, _list.begin()));
+		}
+
+		template <typename V>
+		void assign(typename TMap::iterator hit_it, const V& value) const
+		{
+			hit_it->second = std::make_pair(value, _list.begin());
 		}
 
 	private:
@@ -192,26 +189,31 @@ struct ipc_cache_t
 			throw std::runtime_error("can't lock shared named mutex");
 		}
 
+		// create shared memory key
 		ipc_string_allocator_t segment(_shm.get_segment_manager());
-		ipc_string_t shm_key(key.c_str(), segment);
+		ipc_string_t key_shared(key.c_str(), segment);
 
-		bool overwrite = false;
+		// create shared memory value
+		ipc_string_t value_shared(value.c_str(), segment);
 
  		// try to get item from cache
  		auto list_it = _p_items_list->end();
- 		const auto f_it = _p_items_map->find(shm_key);
+ 		const auto f_it = _p_items_map->find(key_shared);
 		if (f_it != _p_items_map->end())
 		{
 			list_it = f_it->second.second;
-			overwrite = (value != std::string(list_it->begin(), list_it->end()));
 		}
 
 		// apply strategy
-		if (!_p_strategy->exists(list_it, overwrite))
+		if (_p_strategy->exists(list_it) == _p_items_list->end())
  		{
- 			ipc_string_t shm_value(value.c_str(), segment);
- 			_p_strategy->insert<ipc_string_t, ipc_string_t>(shm_key, shm_value);
+ 			_p_strategy->insert<ipc_string_t, ipc_string_t>(key_shared, value_shared);
  		}
+		else
+		{
+			//f_it->second = std::make_pair(value_shared, _p_items_list->begin());
+			_p_strategy->assign<ipc_string_t>(f_it, value_shared);
+		}
 	}
 
 private:
