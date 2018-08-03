@@ -7,6 +7,23 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "svg2raster", "svg2raster\sv
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "unit-tests", "unit-tests\unit-tests.vcxproj", "{D96CD5E1-707B-4C1B-8F06-E75E477750CC}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "cmake", "cmake", "{D949C17D-2796-4305-8069-1470FC1701B1}"
+	ProjectSection(SolutionItems) = preProject
+		CMakeLists.txt = CMakeLists.txt
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "cmake", "cmake", "{7A53460C-C3ED-4EE0-84C3-49E95134F83F}"
+	ProjectSection(SolutionItems) = preProject
+		cmake\dependencies.cmake = cmake\dependencies.cmake
+		cmake\flags.cmake = cmake\flags.cmake
+		cmake\paths.cmake = cmake\paths.cmake
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{0F6F06AA-92E6-4F8E-9CA9-7B2594F69F32}"
+	ProjectSection(SolutionItems) = preProject
+		README.txt = README.txt
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -34,6 +51,9 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{7A53460C-C3ED-4EE0-84C3-49E95134F83F} = {D949C17D-2796-4305-8069-1470FC1701B1}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {4245D03D-875D-4775-A108-E3ACAC514D81}

@@ -11,14 +11,14 @@ namespace command_line
 	{
 		cmd_args_t ret;
 		po::variables_map vm;
-		po::options_description config{ "Program Usage" };
+		po::options_description config("Program Usage");
 		try
 		{
 			config.add_options()
 				("help,h", "produce help message")
-				("url,u", po::wvalue<std::wstring>(&ret._url)->required(), "[string] - <url> to be processed")
-				("format,f", po::wvalue<std::wstring>(&ret._rtype)->required(), "[string: png|jpeg] - output file format")
-				("svg_path,p", po::wvalue<std::wstring>(&ret._svg_path)->required(), "[string] - path to svg files")
+				("url,u", po::value<std::string>(&ret._url)->required(), "[string] - <url> to be processed")
+				("format,f", po::value<std::string>(&ret._rtype)->required(), "[string: png|jpeg] - output file format")
+				("svg_path,p", po::value<std::string>(&ret._svg_path)->required(), "[string] - path to svg files")
 				;
 
 			po::store(po::parse_command_line(argc, argv, config), vm);

@@ -13,11 +13,12 @@
 
 #include <Magick++/Image.h>
 
+#include <iostream>
 #include <iomanip>
 
 //////////////////////////////////////////////////////////////////////////
 
-namespace converter
+namespace parser
 {
 	namespace x3 = boost::spirit::x3;
 	struct settings
@@ -28,13 +29,14 @@ namespace converter
 		uint32_t _scale_h;
 	};
 
-	static auto r_parser = x3::rule<struct _, converter::settings>{ "settings" };
-	static auto r_parser_def = +x3::char_("a-z") >> '&' >> +x3::char_("a-z") >> '=' >> x3::uint_ >> 'x' >> x3::uint_;
+	static auto r_settings = x3::rule<struct _, settings>{ "settings" };
+	static auto r_settings_def = +x3::char_("a-z") >> '&' >> +x3::char_("a-z") >> '=' >> x3::uint_ >> 'x' >> x3::uint_;
 
-	BOOST_SPIRIT_DEFINE(r_parser)
+	BOOST_SPIRIT_DEFINE(r_settings)
 };
 
-BOOST_FUSION_ADAPT_STRUCT(converter::settings, (std::string, _converter)(std::string, _scale_type)(uint32_t, _scale_w)(uint32_t, _scale_h))
+BOOST_FUSION_ADAPT_STRUCT(parser::settings, 
+(std::string, _converter)(std::string, _scale_type)(uint32_t, _scale_w)(uint32_t, _scale_h))
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -45,7 +47,7 @@ struct image_converter
 		namespace x3 = boost::spirit::x3;
 
 		auto f = query_str.begin(), l = query_str.end();
-		const auto ok = x3::parse(f, l, converter::r_parser, _cfg);
+		const auto ok = x3::parse(f, l, parser::r_settings, _cfg);
 		if (!ok)
 		{
 			std::stringstream ss;
@@ -91,11 +93,10 @@ struct image_converter
 		_cache.put(img_path, img_out_path);
 
 		std::cout << ">> done\n";
-
 	}
 
 private:
-	converter::settings _cfg{};
+	parser::settings _cfg{};
 	ipc_cache_t<1000> _cache{ "svg2raster" };
 };
 

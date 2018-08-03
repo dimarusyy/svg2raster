@@ -207,12 +207,11 @@ struct ipc_cache_t
 		// apply strategy
 		if (_p_strategy->exists(list_it) == _p_items_list->end())
  		{
- 			_p_strategy->insert<ipc_string_t, ipc_string_t>(key_shared, value_shared);
+ 			_p_strategy->insert(key_shared, value_shared);
  		}
 		else
 		{
-			//f_it->second = std::make_pair(value_shared, _p_items_list->begin());
-			_p_strategy->assign<ipc_string_t>(f_it, value_shared);
+			_p_strategy->assign(f_it, value_shared);
 		}
 	}
 
