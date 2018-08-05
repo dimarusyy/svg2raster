@@ -51,8 +51,25 @@ macro(print_compile_flags)
 	message(STATUS "")
 endmacro()
 
+#set_target_properties(${TARGET} PROPERTIES
+#    CXX_STANDARD 14
+#    CXX_STANDARD_REQUIRED YES
+#    CXX_EXTENSIONS NO
+#)
 if(NOT MSVC)
     SET(CMAKE_CXX_FLAGS "-Wall -std=c++14 ${CMAKE_CXX_FLAGS}")
 endif()
 
-set(CMAKE_VERBOSE_MAKEFILE TRUE)
+if(WIN32)
+	if(NOT "${CMAKE_GENERATOR}" MATCHES "(Win64|IA64)")
+		set(OS_PREFIX windows.x86)
+	else()
+		set(OS_PREFIX windows.x64)
+	endif()
+else()
+	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+		set(OS_PREFIX linux.x64)
+	else()
+		set(OS_PREFIX linux.x86)
+	endif()
+endif()
