@@ -13,13 +13,12 @@ Building :
 	Options #2
 		a. cd svg2raster
 		b. mkdir build_win32
-		c. set VCPKG_ROOT=<path to vcpkg root folder>
-		d. cmake .. -DVCPKG_TARGET_TRIPLET=x86-windows-static
-		e. cmake --build .
+		c. cmake .. -DCMAKE_TOOLCHAIN_FILE=D:\dev\vcpkg\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x86-windows-static
+		d. cmake --build .
 2. Linux
 		a. cd svg2raster
 		b. mkdir build_linux
-		c. VCPKG_ROOT=<path to vcpkg root folder> cmake .. 
+		c. cmake .. -DCMAKE_TOOLCHAIN_FILE=/mnt/d/dev/vcpkg/scripts/buildsystems/vcpkg.cmake
 		d. make 
 
 Running :

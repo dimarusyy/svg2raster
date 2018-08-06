@@ -5,9 +5,6 @@ cmake_minimum_required (VERSION 3.10)
 set(CMAKE_VERBOSE_MAKEFILE TRUE)
 
 # required modules
-#include(CheckIncludeFile)
-#include(CheckIncludeFileCXX)
-#include(CheckIncludeFiles)
 include(ExternalProject)
 
 include("cmake/paths.cmake")

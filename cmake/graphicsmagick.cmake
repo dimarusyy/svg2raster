@@ -23,28 +23,16 @@ if(NOT MSVC)
 		OUTPUT_VARIABLE GM_INCLUDE_DIRS)
 
 	set(GM_INCLUDE_DIRS ${GM_INSTALL_DIR}/include/GraphicsMagick)
-	include_directories(${GM_INCLUDE_DIRS})
 
 	#ldflags for GM
 	execute_process(
-		COMMAND ${GM_INSTALL_DIR}/bin/GraphicsMagick++-config --ldflags
+		COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/cmake/graphicsmagick.sh ${GM_INSTALL_DIR}/bin/GraphicsMagick++-config --ldflags
 		OUTPUT_VARIABLE GM_LIBRARY_DIRS)
+
 	execute_process(
-		COMMAND ${GM_INSTALL_DIR}/bin/GraphicsMagick++-config --libs
+		COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/cmake/graphicsmagick.sh ${GM_INSTALL_DIR}/bin/GraphicsMagick++-config --libs
 		OUTPUT_VARIABLE GM_LIBS)
-
-#	string(REGEX REPLACE "\n$" "" GM_LDFLAGS "${GM_LDFLAGS}")
-#	string(REGEX REPLACE "\n$" "" GM_LIBS "${GM_LIBS}")
-
-	#remove imagemagic libs as we need static linking
-#	string(REPLACE "-lGraphicsMagick++ " "" GM_LIBS ${GM_LIBS})
-#	string(REPLACE "-lGraphicsMagick " "" GM_LIBS ${GM_LIBS})
-#	string(REPLACE " -l" ";" GM_LIBS ${GM_LIBS})
-
-#	set(GM_LIBRARY_DIRS "`${GM_INSTALL_DIR}/bin/GraphicsMagick++-config --ldflags`")
-#	set(GM_LIBS "`${GM_INSTALL_DIR}/bin/GraphicsMagick++-config --libs`")
-#	set(GM_LIBS ${GM_INSTALL_DIR}/lib/libGraphicsMagick++.a ${GM_INSTALL_DIR}/lib/libGraphicsMagick.a ${GM_LIBS} rt)
-	link_directories(${GM_LIBRARY_DIRS})
+	set(GM_LIBS ${GM_INSTALL_DIR}/lib/libGraphicsMagick++.a ${GM_INSTALL_DIR}/lib/libGraphicsMagick.a ${GM_LIBS} rt)
 else()
 	message(STATUS "Preparing GraphicsMagick for MSVC build")
 	execute_process(
