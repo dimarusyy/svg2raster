@@ -1,4 +1,5 @@
 cmake_minimum_required (VERSION 3.10)
+cmake_policy(VERSION 2.6)
 
 include_directories(${GM_INCLUDE_DIRS})
 link_directories(${GM_LIBRARY_DIRS})
@@ -10,5 +11,4 @@ endif()
 set(SOURCE_FILES command_line_args.cpp  stdafx.cpp  svg2raster.cpp)
 set(HEADER_FILES command_line_args.h  image_converter.h  ipc_cache.h  stdafx.h  targetver.h)
 add_executable (svg2raster ${SOURCE_FILES} ${HEADER_FILES})
-
 

@@ -32,6 +32,7 @@ if(NOT MSVC)
 	execute_process(
 		COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/cmake/graphicsmagick.sh ${GM_INSTALL_DIR}/bin/GraphicsMagick++-config --libs
 		OUTPUT_VARIABLE GM_LIBS)
+#	set(GM_LIBS ${GM_INSTALL_DIR}/lib/libGraphicsMagick++.a ${GM_INSTALL_DIR}/lib/libGraphicsMagick.a)
 	set(GM_LIBS ${GM_INSTALL_DIR}/lib/libGraphicsMagick++.a ${GM_INSTALL_DIR}/lib/libGraphicsMagick.a ${GM_LIBS} rt)
 else()
 	message(STATUS "Preparing GraphicsMagick for MSVC build")
