@@ -2,9 +2,8 @@ cmake_minimum_required (VERSION 3.10)
 
 include_directories(${GM_INCLUDE_DIRS})
 link_directories(${GM_LIBRARY_DIRS})
-link_libraries(${GM_LIBS})
 if(NOT MSVC)
-	link_libraries(pthread rt)
+	link_libraries(${GM_LIBS} pthread rt)
 endif()
 
 # Add source to this project's executable.

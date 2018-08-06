@@ -1,3 +1,7 @@
+Descritpion:
+	* svg2raster app converts svg file to png/jpeg depending on given paramaters
+	* graphicsmagick is used to make svg->png or svg->jpeg convesion
+
 Dependencies :
 	* boost
 	* graphicsmagick (prebuild x86/x64 binaries and headers are available in 3rdParty.zip)
@@ -24,6 +28,3 @@ Building :
 Running :
 	#svg2raster -u "https://localhost/test.svg?rasterize&fit=50x50" -f png -p E:\
 	#svg2raster -u "https://localhost/test.svg?rasterize&fit=50x50" -f jpeg -p E:\
-
-Notes :
-	* graphicsmagick is used to make svg->png or svg->jpeg convesion
